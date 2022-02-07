@@ -11,8 +11,10 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "axios": "^0.25.0",
     "cors": "^2.8.5",
     "express": "^4.17.2",
+    "follow-redirects": "^1.14.7",
     "lodash": "^4.17.21",
     "multer": "^1.4.4",
     "sqlite3": "^5.0.2"
