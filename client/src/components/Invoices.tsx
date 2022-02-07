@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { useNavigate } from "react-router-dom";
 
@@ -24,13 +24,6 @@ const StyleWrap = styled.div`
 const StyledButton = styled.button`
   background: 'white';
   color: blue;
-  font-size: 12px;
-  padding: 2px;
-  font-family: sans-serif;
-  border-radius: 2px;
-  text-align: center;
-  margin: 2px;
-  border: '3px solid black';
   &:hover {
     cursor: pointer;
   }
@@ -74,6 +67,10 @@ type InvoicesTotalProps = {
     total: number,
 };
 
+const stopPropagation = (event: React.MouseEvent<HTMLElement>): void => {
+    event.stopPropagation();
+};
+
 const Invoices = ({ invoices, handleDelete }: InvoicesProps): JSX.Element => {
     const [total, setTotal] = useState(0);
     const [totalPerInvoice, setTotalPerInvoice] = useState<InvoicesTotalProps[] | []>([]);
@@ -98,22 +95,7 @@ const Invoices = ({ invoices, handleDelete }: InvoicesProps): JSX.Element => {
     }, [invoices, totalPerInvoice]);
 
     const navigate = useNavigate();
-    type ButtonProps = {
-        href?: string,
-        text: string,
-        onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void;
-    };
-    const Button = ({ href, text, onClick }: ButtonProps) => (
-        href
-            ? <StyledLink href={href}>
-                {text}
-            </StyledLink>
-            : <StyledButton onClick={onClick}>
-                {text}
-            </StyledButton>
-    );
     const newURL = '/invoice';
-    const deleteInvoice = useCallback((id) => handleDelete(id), [handleDelete]);
 
     const getInvoiceRow = (invoice: Invoice, totalForInvoice: InvoicesTotalProps[]) => {
         const mailSubject = encodeURI(`Invoice: ${invoice.name}`);
@@ -135,16 +117,19 @@ const Invoices = ({ invoices, handleDelete }: InvoicesProps): JSX.Element => {
                 <td>{(totalForInvoice.find(totalObj => totalObj.id === invoice.id)?.total)?.toLocaleString("en-US")}</td>
                 <td>{invoice.status}</td>
                 <td>
-                    {/* EDIT BUTTON */}
-                    <Button href={editURL} text='Edit' />
+                    {/* EDIT */}
+                    <StyledLink href={editURL} onClick={stopPropagation}>Edit</StyledLink>
                 </td>
                 <td>
-                    {/* MAIL BUTTON */}
-                    <Button href={mailTo} text='Email' />
+                    {/* MAIL */}
+                    <StyledLink href={mailTo} onClick={stopPropagation}>Email</StyledLink>
                 </td>
                 <td>
                     {/* DELETE BUTTON */}
-                    <Button onClick={() => deleteInvoice(invoice.id)} text='Delete' />
+                    <StyledButton onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
+                        handleDelete(invoice.id);
+                        e.stopPropagation();
+                    }}>Delete</StyledButton>
                 </td>
             </tr>
         )
@@ -156,7 +141,7 @@ const Invoices = ({ invoices, handleDelete }: InvoicesProps): JSX.Element => {
             <hr />
             <div>
                 <div>
-                    <Button href={newURL} text='Add invoice' />
+                    <StyledLink href={newURL}>Add invoice</StyledLink>
                 </div>
             </div>
             <table>
@@ -164,7 +149,7 @@ const Invoices = ({ invoices, handleDelete }: InvoicesProps): JSX.Element => {
                     <tr>
                         <th>Due Date</th>
                         <th>Name</th>
-                        <th>Total</th>
+                        <th>Total invoice</th>
                         <th>Status</th>
                         <th colSpan={3}>Action</th>
                     </tr>
@@ -177,7 +162,7 @@ const Invoices = ({ invoices, handleDelete }: InvoicesProps): JSX.Element => {
                 </tbody>
             </table>
             <div>
-                <div>Grand Total</div>
+                <div>Total</div>
                 <div>
                     {total.toLocaleString("en-US")}
                 </div>

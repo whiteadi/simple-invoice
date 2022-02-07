@@ -5,7 +5,7 @@ import { getInvoices, deleteInvoice } from '../api';
 
 const Home: FC = () => {
     const [invoices, setInvoices] = useState([]);
-    const [state, setState] = useState<{}>();
+    const [state, setState] = useState<{}>({});
 
     useEffect(() => {
         getInvoices().then(allInvoices => {            
