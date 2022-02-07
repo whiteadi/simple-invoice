@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { Invoice, InvoiceItem } from '../types';
 import { StatusTypes } from '../constants';
 import { getItems } from '../api';
+import { stopPropagation } from '../utils/utile';
 
 const StyleWrap = styled.div`
   td {
@@ -21,6 +22,7 @@ const StyleWrap = styled.div`
     margin: 2px;
   }
 `;
+
 const StyledButton = styled.button`
   background: 'white';
   color: blue;
@@ -65,10 +67,6 @@ const getTotal = async (invoices: Array<Invoice>) => {
 type InvoicesTotalProps = {
     id: number,
     total: number,
-};
-
-const stopPropagation = (event: React.MouseEvent<HTMLElement>): void => {
-    event.stopPropagation();
 };
 
 const Invoices = ({ invoices, handleDelete }: InvoicesProps): JSX.Element => {

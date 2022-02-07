@@ -10,21 +10,18 @@ const configPost = {
   },
 };
 
-const createInvoice = (name: string, email: string, company_name: string, price: number, onNewInvoice: () => void) => {
-  api
-    .post(
-      '/invoices',
-      `name=${name}&company_name=${company_name}&email=${email}&price=${price}`,
-      configPost
-    )
-    .then(
-      (__response: any) => {
-        onNewInvoice();
-      },
-      (error: any) => {
-        console.log(error);
-      }
+const createInvoice = async (name: string, due_date: string, status: string): Promise<number> => {
+  try {
+    const response = await api.post(
+        '/invoices',
+        `name=${name}&due_date=${due_date}&status=${status}`,
+        configPost
     );
+    return response.data?.id;
+  } catch (err) {
+    console.error('Invoice creation failed:', err);
+    return 0;
+  };
 };
 
 const getInvoices = async () => {
@@ -33,8 +30,8 @@ const getInvoices = async () => {
     return response.data?.data;
   } catch (err) {
     console.error('Invoices loading failed:', err);
-  }
-}
+  };
+};
 
 const deleteInvoice = async (invoiceId: number) => {
   try {
@@ -42,8 +39,8 @@ const deleteInvoice = async (invoiceId: number) => {
     return response.data?.message;
   } catch (err) {
     console.error('Invoice deletion failed:', err);
-  }
-}
+  };
+};
 
 const getItems = async (invoiceId: number) => {
   try {
@@ -51,7 +48,24 @@ const getItems = async (invoiceId: number) => {
     return response.data?.data;
   } catch (err) {
     console.error('Invoices items loading failed:', err);
-  }
-}
+  };
+};
 
-export { createInvoice, getInvoices, deleteInvoice, getItems };
+const createItem = (description: string, price: number, invoiceId: number) => {
+  api
+    .post(
+      '/api/items',
+      `description=${description}&price=${price}&invoiceId=${invoiceId}`,
+      configPost
+    )
+    .then(
+      (__response: any) => {
+        return true;
+      },
+      (error: any) => {
+        console.log(error);
+      }
+    );
+};
+
+export { createInvoice, getInvoices, deleteInvoice, getItems, createItem };
