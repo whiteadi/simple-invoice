@@ -1,10 +1,14 @@
-import React, { FC, useCallback, useState } from 'react';
-import styled from 'styled-components';
+import React, { FC, useCallback, useState, useEffect } from 'react';
 
+import styled from 'styled-components';
+import { useNavigate, useParams } from "react-router-dom";
+import DatePicker from "react-datepicker";
+
+import "react-datepicker/dist/react-datepicker.css";
 import { Invoice, InvoiceItem } from '../types';
 import { StatusTypes } from '../constants';
 import { stopPropagation } from '../utils/utile';
-import { createInvoice, createItem } from '../api';
+import { createInvoice, createItem, getInvoice, getItems, deleteItem, updateItem, updateInvoice } from '../api';
 
 const StyledButton = styled.button`
   background: 'white';
@@ -49,20 +53,35 @@ const StyledLink = styled.a`
 `;
 
 const emptyInvoice = (): Invoice => (
-    { id: -1, name: '', due_date: '', status: StatusTypes.OPEN }
+    { id: -1, name: '', due_date: new Date(), status: StatusTypes.OPEN }
 );
 
 const CreateInvoice: FC = () => {
     const [invoice, setInvoice] = useState<Invoice>(emptyInvoice());
     const [items, setItems] = useState<Array<InvoiceItem>>([]);
     const [name, setName] = useState(invoice.name);
-    const [dueDate, setDueDate] = useState(invoice.due_date);
+    const [dueDate, setDueDate] = useState<Date>(new Date(invoice.due_date));
     const [status, setStatus] = useState(invoice.status);
     const [description, setDescription] = useState('');
     const [price, setPrice] = useState(0);
+    const navigate = useNavigate();
+
+    let { id } = useParams();
+
+    useEffect(() => {
+        if (id) {
+            getInvoice(parseInt(id)).then((theInvoice: Invoice) => {
+                setInvoice(theInvoice);
+                setName(theInvoice.name);
+                setDueDate(new Date(theInvoice.due_date));
+                setStatus(theInvoice.status);
+                getItems(theInvoice.id).then(items => setItems(items));
+            });
+        }        
+    }, [id]);
 
     const handleItemDelete = (item: InvoiceItem) => {
-        const newItems: Array<InvoiceItem> | undefined = items?.filter(anItem => anItem.description !== item.description && anItem.price !== item.price);
+        const newItems: Array<InvoiceItem> | undefined = items?.filter(anItem => anItem.description !== item.description || anItem.price !== item.price);
         setItems(newItems);
     }
 
@@ -75,9 +94,9 @@ const CreateInvoice: FC = () => {
                 <td>{item.description}</td>
                 <td>{(item.price).toLocaleString("en-US")}</td>
                 <td>
-                    <StyledButton onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
-                        handleItemDelete(item);
+                    <StyledButton onClick={(e: React.MouseEvent<HTMLButtonElement>) => {                        
                         e.stopPropagation();
+                        handleItemDelete(item);
                     }}>Delete item</StyledButton>
                 </td>
             </tr>
@@ -86,15 +105,34 @@ const CreateInvoice: FC = () => {
     const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         if (invoice.id > -1) {
-            // handleEditInvoice(invoice)
+            getItems(invoice.id).then((oldItems: InvoiceItem[]) => {
+                const oldItemsIds = oldItems.map((oldItem: InvoiceItem) => oldItem.id);
+                const existingItemsIds = items.map((existingItem: InvoiceItem) => existingItem.id).filter(itemId => itemId !== 0);
+                const deletedOldItemIds = oldItemsIds.filter((oldItemId: number) => !existingItemsIds.includes(oldItemId));
+                const updatedOldItemIds = oldItemsIds.filter((oldItemId: number) => existingItemsIds.includes(oldItemId));
+                const newItems = items.filter((newItem: InvoiceItem) => newItem.id === 0);
+                deletedOldItemIds.forEach((deletedItemId: number) => {
+                    deleteItem(deletedItemId);
+                });
+                updatedOldItemIds.forEach((updatedItemId: number) => {
+                    items.filter(item => item.id === updatedItemId).forEach(itemToUpdate => {
+                        updateItem(updatedItemId, itemToUpdate.description, itemToUpdate.price, itemToUpdate.invoiceId);
+                    });
+                });
+                newItems.map(toCreateItem => {
+                    return createItem(toCreateItem.description, toCreateItem.price, invoice.id);
+                });
+            });
+            updateInvoice(invoice.id, name, dueDate, status);
         } else {
-            setInvoice({ name, due_date: dueDate, status, id: 0, });
-            createInvoice(invoice.name, invoice.due_date, invoice.status).then(invoiceId => {
+            setInvoice({ name, due_date: dueDate, status, id: -1, });
+            createInvoice(name, dueDate, status).then(invoiceId => {
                 items.map(item => {
                     return createItem(item.description, item.price, invoiceId);
-                }) 
+                });                
             });            
         };
+        navigate('/');
     }
 
 
@@ -105,15 +143,17 @@ const CreateInvoice: FC = () => {
             <form id="form" onSubmit={e => { handleSubmit(e) }}>
                 <div>
                     <div>
-                        <label>  Invoice Name:</label>
+                        <label>Invoice Name:</label>
                         <input type="text" name={name} value={name} onChange={e => setName(e.target.value)} />
                     </div>
                     <div>
                         <label>Due Date</label>
-                        <input
-                            type="text"
-                            placeholder="Ex. 1/1/2017"
-                            value={dueDate} onChange={e => setDueDate(e.target.value)}
+                        <DatePicker
+                            dateFormat="dd/MM/yyyy"
+                            selected={dueDate}
+                            onChange={(date: Date) => {
+                                setDueDate(date);
+                            }}
                         />
                     </div>
                     <div>
@@ -160,20 +200,23 @@ const CreateInvoice: FC = () => {
                                     />
                                 </td>
                                 <td>
-                                    <StyledButton onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
-                                        setItems([{ description, price, id: 0, invoiceId: 0, }, ...items]);
-                                        setDescription('');
-                                        setPrice(0);
+                                    <StyledButton type="button" onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
                                         e.stopPropagation();
-                                    }}>Delete</StyledButton>
+                                        setItems([{ description, price, id: 0, invoiceId: -1, }, ...items]);
+                                        setDescription('');
+                                        setPrice(0);                                        
+                                    }}>Add item</StyledButton>
                                 </td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
-
-                <label>Total</label>
+                <div>
+                    <label>Total</label>
+                </div>
+                <div>
                 {makeTotal(items).toLocaleString("en-US")}
+                </div>
 
                 <div className="text-right">
                     <StyledLink href="/" onClick={stopPropagation}>Cancel</StyledLink>

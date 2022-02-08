@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
 import Sidebar from './components/Sidebar';
 import Home from "./components/Home";
-import CreateInvoice from "./components/CreateInvoice";
+import ManageInvoice from "./components/ManageInvoice";
 
 const App: FC = () => {
   return (
@@ -12,8 +12,8 @@ const App: FC = () => {
         <Sidebar />
         <Routes>
           <Route path='/' element={<Home />} />
-          <Route path='/invoice' element={<CreateInvoice />} />
-          <Route path='/edit/:id' element={<CreateInvoice />} />
+          <Route path='/invoice' element={<ManageInvoice />} />
+          <Route path='/edit/:id' element={<ManageInvoice />} />
         </Routes>
       </Router>
     </>

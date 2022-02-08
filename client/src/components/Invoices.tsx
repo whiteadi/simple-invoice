@@ -6,6 +6,7 @@ import { Invoice, InvoiceItem } from '../types';
 import { StatusTypes } from '../constants';
 import { getItems } from '../api';
 import { stopPropagation } from '../utils/utile';
+import moment from 'moment';
 
 const StyleWrap = styled.div`
   td {
@@ -81,8 +82,8 @@ const Invoices = ({ invoices, handleDelete }: InvoicesProps): JSX.Element => {
         for (const invoice of invoices) {
             getItems(invoice.id).then(items => {
                 const totalInvoice: number = items.reduce((acc: number, item: InvoiceItem) => (acc + item.price), 0);
-                setTotalPerInvoice([
-                    ...totalPerInvoice,
+                setTotalPerInvoice(prevTotalPerInvoice => [
+                    ...prevTotalPerInvoice,
                     {
                         id: invoice.id,
                         total: totalInvoice,
@@ -90,7 +91,8 @@ const Invoices = ({ invoices, handleDelete }: InvoicesProps): JSX.Element => {
                 ]);
             });
         }
-    }, [invoices, totalPerInvoice]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [invoices]);
 
     const navigate = useNavigate();
     const newURL = '/invoice';
@@ -101,16 +103,17 @@ const Invoices = ({ invoices, handleDelete }: InvoicesProps): JSX.Element => {
             `Please view your invoice at this web page: http://example.com/invoices/${invoice.id}`;
         const mailTo = `mailto:?subject=${mailSubject}&body=${mailBody}`;
         const overdue =
-            invoice.status === StatusTypes.OPEN && (new Date(invoice.due_date).getTime() - new Date().getTime() <= 0);
+            invoice.status !== StatusTypes.PAID && (new Date(invoice.due_date).getTime() - new Date().getTime() <= 0);
         const editURL = `/edit/${invoice.id}`;
 
+        const bgColor = overdue ? '#FF0000' : '#FFFFFF';
         return (
             <tr
                 key={invoice.id}
                 onClick={() => navigate(editURL)}
-                background-color={overdue ? 'red' : 'white'}
+                style={{ backgroundColor: bgColor, }}
             >
-                <td>{invoice.due_date}</td>
+                <td>{moment(invoice.due_date).format("dd/MM/yyyy")}</td>
                 <td>{invoice.name}</td>
                 <td>{(totalForInvoice.find(totalObj => totalObj.id === invoice.id)?.total)?.toLocaleString("en-US")}</td>
                 <td>{invoice.status}</td>

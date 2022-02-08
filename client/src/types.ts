@@ -7,6 +7,6 @@ export type InvoiceItem = {
 export type Invoice = {
     id: number,
     name: string,
-    due_date: string,
+    due_date: Date,
     status: string,
 }

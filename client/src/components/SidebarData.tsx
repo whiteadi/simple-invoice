@@ -10,6 +10,6 @@ export const SidebarData = [
     {
         title: 'Add invoice',
         path: '/invoice',
-        icon: <FaIcons.FaTasks />
+        icon: <FaIcons.FaFileInvoiceDollar />
     }
 ];
