@@ -1,7 +1,9 @@
 import axios from 'axios';
 
+const port = process.env.PORT || 8000;
+
 const api = axios.create({
-  baseURL: 'http://localhost:8000/api/',
+  baseURL: `http://localhost:${port}/api/`,
 });
 const configPost = {
   headers: {
