@@ -45,11 +45,11 @@ and there run
 
 In the project directory, to start, usually first :), the server, you should run:
 
-### `npm start server`
+### `npm run server`
 
 Also in the project directory for the client to start, you should run:
 
-### `npm start client`
+### `npm run client`
 
 And this runs the app in the development mode.\
 Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
